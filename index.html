@@ -1,70 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Korean Number Listening Practice</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 2rem auto;
+      text-align: center;
+      padding: 1rem;
+      background: #f0f4f8;
+      color: #222;
+    }
+    h1 {
+      margin-bottom: 1rem;
+    }
+    select, input, button {
+      font-size: 1.2rem;
+      padding: 0.5rem;
+      margin: 0.5rem 0.2rem;
+      width: 150px;
+      max-width: 90%;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    #feedback {
+      font-size: 1.3rem;
+      margin-top: 1.2rem;
+      min-height: 2rem;
+      font-weight: bold;
+    }
+    button {
+      cursor: pointer;
+      background-color: #2d89ef;
+      color: white;
+      border: none;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #1b5fbd;
+    }
+    #controls {
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎧 Korean Number Listening Practice</h1>
+
+  <div id="controls">
+    <label for="range">Select number range:</label><br/>
+    <select id="range" aria-label="Select number range">
+      <option value="1-99">1 - 99</option>
+      <option value="1-999">1 - 999</option>
+      <option value="1-9999">1 - 9,999</option>
+      <option value="1-99999">1 - 99,999</option>
+    </select>
+    <br/>
+    <button id="newNumberBtn" aria-label="Generate new number and play Korean audio">🔁 New Number</button>
+    <button id="playAgainBtn" aria-label="Play again the current Korean number audio">▶️ Play Again</button>
+  </div>
+
+  <input
+    type="number"
+    id="answerInput"
+    placeholder="Enter number you hear"
+    aria-label="Input your answer"
+    autocomplete="off"
+    inputmode="numeric"
+  />
+  <button id="submitBtn" aria-label="Submit your answer">Submit</button>
+
+  <div id="feedback" role="alert" aria-live="polite"></div>
+
 <script>
-  let currentNumber = 0;
+  let currentNumber = null;
 
   function getRange() {
-    const rangeValue = document.getElementById("range").value;
-    const [min, max] = rangeValue.split('-').map(Number);
-    return { min, max };
+    const rangeVal = document.getElementById('range').value;
+    const [min, max] = rangeVal.split('-').map(Number);
+    return {min, max};
   }
 
-  function newQuestion() {
-    const { min, max } = getRange();
-    currentNumber = Math.floor(Math.random() * (max - min + 1)) + min;
-
-    document.getElementById("answer").value = "";
-    document.getElementById("feedback").innerText = "";
-
-    playCurrent();
-  }
-
-  function playCurrent() {
-    if (!currentNumber) return;
-
-    const utterance = new SpeechSynthesisUtterance(currentNumber.toString());
-    utterance.lang = 'ko-KR';
-
-    const voices = speechSynthesis.getVoices();
-    const koreanVoices = voices.filter(v => v.lang.includes('ko'));
-
-    if (koreanVoices.length > 0) {
-      utterance.voice = koreanVoices[0];
-    } else {
-      alert("⚠️ 此裝置可能沒有支援韓文語音。請在系統設定中安裝韓文語音包，或使用電腦瀏覽器。");
-    }
-
-    speechSynthesis.cancel();
-    speechSynthesis.speak(utterance);
-  }
-
-  function checkAnswer() {
-    const userAnswer = parseInt(document.getElementById("answer").value);
-    const feedback = document.getElementById("feedback");
-
-    if (isNaN(userAnswer)) {
-      feedback.style.color = "orange";
-      feedback.innerText = "⚠️ 請輸入數字";
+  function speakNumber(num) {
+    if (!('speechSynthesis' in window)) {
+      alert('Sorry, your browser does not support speech synthesis.');
       return;
     }
 
-    if (userAnswer === currentNumber) {
-      feedback.style.color = "green";
-      feedback.innerText = `✅ 正確！答案是 ${currentNumber}`;
+    const utterance = new SpeechSynthesisUtterance(num.toString());
+    utterance.lang = 'ko-KR';
+
+    // 選擇韓文語音（部分瀏覽器可能延遲載入voices）
+    let voices = speechSynthesis.getVoices();
+    if (!voices.length) {
+      speechSynthesis.onvoiceschanged = () => {
+        voices = speechSynthesis.getVoices();
+        setKoreanVoice(utterance, voices);
+        speechSynthesis.cancel();
+        speechSynthesis.speak(utterance);
+      };
     } else {
-      feedback.style.color = "red";
-      feedback.innerText = `❌ 錯誤，正確答案是 ${currentNumber}`;
-    }
-
-    setTimeout(newQuestion, 1500);
-  }
-
-  document.getElementById("answer").addEventListener("keydown", function(event) {
-    if (event.key === "Enter") {
-      checkAnswer();
-    }
-  });
-
-  // 等待語音加載後，再出題
-  window.speechSynthesis.onvoiceschanged = () => {
-    newQuestion();
-  };
-</script>
+      setKoreanVoice(utterance, voices);
+      speechSynthesis.cancel();
+      speechSynthesis.spe

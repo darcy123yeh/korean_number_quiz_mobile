@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Korean Number Listening Practice</title>
+  <title>韓文數字聽力練習</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -11,7 +11,7 @@
       margin: 2rem auto;
       text-align: center;
       padding: 1rem;
-      background: #f0f4f8;
+      background: #f9f9f9;
       color: #222;
     }
     h1 {
@@ -21,7 +21,7 @@
       font-size: 1.2rem;
       padding: 0.5rem;
       margin: 0.5rem 0.2rem;
-      width: 150px;
+      width: 180px;
       max-width: 90%;
       border-radius: 5px;
       border: 1px solid #ccc;
@@ -48,30 +48,30 @@
   </style>
 </head>
 <body>
-  <h1>🎧 Korean Number Listening Practice</h1>
+  <h1>🎧 韓文數字聽力練習</h1>
 
   <div id="controls">
-    <label for="range">Select number range:</label><br/>
-    <select id="range" aria-label="Select number range">
+    <label for="range">選擇數字範圍：</label><br/>
+    <select id="range" aria-label="選擇數字範圍">
       <option value="1-99">1 - 99</option>
       <option value="1-999">1 - 999</option>
       <option value="1-9999">1 - 9,999</option>
       <option value="1-99999">1 - 99,999</option>
     </select>
     <br/>
-    <button id="newNumberBtn" aria-label="Generate new number and play Korean audio">🔁 New Number</button>
-    <button id="playAgainBtn" aria-label="Play again the current Korean number audio">▶️ Play Again</button>
+    <button id="newNumberBtn" aria-label="產生新數字並播放韓文語音">🔁 新題目</button>
+    <button id="playAgainBtn" aria-label="重新播放目前韓文數字語音">▶️ 重播</button>
   </div>
 
   <input
     type="number"
     id="answerInput"
-    placeholder="Enter number you hear"
-    aria-label="Input your answer"
+    placeholder="輸入你聽到的數字"
+    aria-label="輸入你的答案"
     autocomplete="off"
     inputmode="numeric"
   />
-  <button id="submitBtn" aria-label="Submit your answer">Submit</button>
+  <button id="submitBtn" aria-label="送出答案">送出</button>
 
   <div id="feedback" role="alert" aria-live="polite"></div>
 
@@ -86,14 +86,13 @@
 
   function speakNumber(num) {
     if (!('speechSynthesis' in window)) {
-      alert('Sorry, your browser does not support speech synthesis.');
+      alert('抱歉，您的瀏覽器不支援語音合成。');
       return;
     }
 
     const utterance = new SpeechSynthesisUtterance(num.toString());
     utterance.lang = 'ko-KR';
 
-    // 選擇韓文語音（部分瀏覽器可能延遲載入voices）
     let voices = speechSynthesis.getVoices();
     if (!voices.length) {
       speechSynthesis.onvoiceschanged = () => {
@@ -105,4 +104,65 @@
     } else {
       setKoreanVoice(utterance, voices);
       speechSynthesis.cancel();
-      speechSynthesis.spe
+      speechSynthesis.speak(utterance);
+    }
+  }
+
+  function setKoreanVoice(utterance, voices) {
+    const koreanVoices = voices.filter(v => v.lang.startsWith('ko'));
+    if (koreanVoices.length > 0) {
+      utterance.voice = koreanVoices[0];
+    }
+  }
+
+  function newNumber() {
+    const {min, max} = getRange();
+    currentNumber = Math.floor(Math.random() * (max - min + 1)) + min;
+    document.getElementById('answerInput').value = '';
+    document.getElementById('feedback').textContent = '';
+    speakNumber(currentNumber);
+  }
+
+  function playAgain() {
+    if (currentNumber !== null) {
+      speakNumber(currentNumber);
+    }
+  }
+
+  function checkAnswer() {
+    const userInput = parseInt(document.getElementById('answerInput').value, 10);
+    const feedback = document.getElementById('feedback');
+
+    if (isNaN(userInput)) {
+      feedback.style.color = 'orange';
+      feedback.textContent = '⚠️ 請輸入數字。';
+      return;
+    }
+
+    if (userInput === currentNumber) {
+      feedback.style.color = 'green';
+      feedback.textContent = `✅ 答對了！答案是 ${currentNumber}`;
+      setTimeout(newNumber, 1500);
+    } else {
+      feedback.style.color = 'red';
+      feedback.textContent = `❌ 答錯囉，再試試或點重播 🔊`;
+    }
+  }
+
+  // 監聽事件
+  document.getElementById('newNumberBtn').addEventListener('click', newNumber);
+  document.getElementById('playAgainBtn').addEventListener('click', playAgain);
+  document.getElementById('submitBtn').addEventListener('click', checkAnswer);
+  document.getElementById('answerInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      checkAnswer();
+    }
+  });
+
+  // 初始化題目
+  window.speechSynthesis.onvoiceschanged = () => {
+    if (currentNumber === null) newNumber();
+  };
+</script>
+</body>
+</html>

@@ -13,6 +13,7 @@
   <h1>韓文數字聽力練習</h1>
   <p>選擇數字範圍並聽韓文語音，輸入正確數字：</p>
 
+  <!-- 範圍選擇 -->
   <label for="rangeSelect">範圍：</label>
   <select id="rangeSelect">
     <option value="1-99" selected>1 - 99</option>
@@ -24,15 +25,18 @@
 
   <br/>
 
+  <!-- 播放聲音 -->
   <button id="playBtn">🔊 播放題目</button>
 
   <br/><br/>
 
+  <!-- 答案輸入 -->
   <input type="number" id="answer" placeholder="輸入數字" />
   <button id="submitBtn">提交</button>
 
   <br/>
 
+  <!-- 新題目按鈕 -->
   <button id="newQuestionBtn">產生新題目</button>
 
   <div id="feedback"></div>
@@ -40,28 +44,18 @@
   <script>
     let currentNumber = 0;
 
+    // 解析範圍字串，回傳 min 和 max
     function parseRange(rangeStr) {
       const parts = rangeStr.split('-').map(Number);
       return { min: parts[0], max: parts[1] };
     }
 
+    // 產生隨機數字
     function getRandomNumber(min, max) {
       return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
-    function getKoreanFemaleVoice() {
-      let voices = speechSynthesis.getVoices();
-      let koreanVoices = voices.filter(voice => voice.lang.startsWith('ko'));
-
-      for(let voice of koreanVoices){
-        const name = voice.name.toLowerCase();
-        if(name.includes('female') || name.includes('woman') || name.includes('girl')){
-          return voice;
-        }
-      }
-      return koreanVoices[0] || null;
-    }
-
+    // 播放韓文數字
     function speakNumber() {
       const rangeStr = document.getElementById('rangeSelect').value;
       const { min, max } = parseRange(rangeStr);
@@ -70,20 +64,24 @@
 
       let utterance = new SpeechSynthesisUtterance(currentNumber.toString());
       utterance.lang = 'ko-KR';
-      utterance.pitch = 1.5;
-      utterance.rate = 1;
+      utterance.pitch = 1.5;  // 提高音高
+      utterance.rate = 1;     // 正常語速
 
-      let femaleVoice = getKoreanFemaleVoice();
-      if(femaleVoice){
-        utterance.voice = femaleVoice;
+      // 指定韓文聲音
+      let voices = speechSynthesis.getVoices();
+      let koreanVoices = voices.filter(voice => voice.lang.startsWith('ko'));
+      if(koreanVoices.length > 0) {
+        utterance.voice = koreanVoices[0];
       }
 
       speechSynthesis.speak(utterance);
 
+      // 清空輸入和提示
       document.getElementById("answer").value = "";
       document.getElementById("feedback").innerText = "";
     }
 
+    // 驗證答案
     function checkAnswer() {
       const userAnswer = parseInt(document.getElementById("answer").value);
       const feedback = document.getElementById("feedback");
@@ -103,10 +101,12 @@
       }
     }
 
+    // 等語音清單載入完後，啟動第一題
     window.speechSynthesis.onvoiceschanged = function() {
       speakNumber();
     };
 
+    // 綁定按鈕事件
     document.getElementById('playBtn').addEventListener('click', speakNumber);
     document.getElementById('submitBtn').addEventListener('click', checkAnswer);
     document.getElementById('newQuestionBtn').addEventListener('click', speakNumber);

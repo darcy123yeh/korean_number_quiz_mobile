@@ -5,35 +5,67 @@
   <title>韓文數字聽力練習</title>
   <style>
     body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
-    input { padding: 5px; font-size: 18px; }
-    button { padding: 5px 10px; font-size: 18px; margin-left: 5px; }
+    input, select, button { padding: 5px; font-size: 18px; margin: 5px; }
     #feedback { margin-top: 20px; font-size: 20px; font-weight: bold; }
   </style>
 </head>
 <body>
   <h1>韓文數字聽力練習</h1>
-  <p>聽韓文語音，輸入正確數字：</p>
-  <button onclick="speakNumber()">🔊 播放</button><br><br>
+  <p>選擇數字範圍並聽韓文語音，輸入正確數字：</p>
+
+  <!-- 範圍選擇 -->
+  <label for="rangeSelect">範圍：</label>
+  <select id="rangeSelect">
+    <option value="1-20">1 - 20</option>
+    <option value="1-99" selected>1 - 99</option>
+    <option value="100-999">100 - 999</option>
+  </select>
+
+  <br/>
+
+  <!-- 播放聲音 -->
+  <button id="playBtn">🔊 播放題目</button>
+
+  <br/><br/>
+
+  <!-- 答案輸入 -->
   <input type="number" id="answer" placeholder="輸入數字" />
-  <button onclick="checkAnswer()">提交</button>
+  <button id="submitBtn">提交</button>
+
+  <br/>
+
+  <!-- 新題目按鈕 -->
+  <button id="newQuestionBtn">產生新題目</button>
 
   <div id="feedback"></div>
 
   <script>
     let currentNumber = 0;
 
-    function getRandomNumber() {
-      return Math.floor(Math.random() * 99) + 1; // 1~99
+    // 解析範圍字串，回傳 min 和 max
+    function parseRange(rangeStr) {
+      const parts = rangeStr.split('-').map(Number);
+      return { min: parts[0], max: parts[1] };
     }
 
+    // 產生隨機數字
+    function getRandomNumber(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    // 播放韓文數字
     function speakNumber() {
-      currentNumber = getRandomNumber();
+      const rangeStr = document.getElementById('rangeSelect').value;
+      const { min, max } = parseRange(rangeStr);
+
+      currentNumber = getRandomNumber(min, max);
+
       let utterance = new SpeechSynthesisUtterance(currentNumber.toString());
       utterance.lang = 'ko-KR';
       utterance.pitch = 1.5;  // 提高音高
       utterance.rate = 1;     // 正常語速
 
-      // 等 voices 載入完再指定聲音
+      // 指定韓文聲音
       let voices = speechSynthesis.getVoices();
       let koreanVoices = voices.filter(voice => voice.lang.startsWith('ko'));
       if(koreanVoices.length > 0) {
@@ -42,13 +74,22 @@
 
       speechSynthesis.speak(utterance);
 
-      document.getElementById("feedback").innerText = "";
+      // 清空輸入和提示
       document.getElementById("answer").value = "";
+      document.getElementById("feedback").innerText = "";
     }
 
+    // 驗證答案
     function checkAnswer() {
-      let userAnswer = parseInt(document.getElementById("answer").value);
-      let feedback = document.getElementById("feedback");
+      const userAnswer = parseInt(document.getElementById("answer").value);
+      const feedback = document.getElementById("feedback");
+
+      if (isNaN(userAnswer)) {
+        feedback.style.color = "orange";
+        feedback.innerText = "⚠️ 請輸入數字！";
+        return;
+      }
+
       if (userAnswer === currentNumber) {
         feedback.style.color = "green";
         feedback.innerText = "✅ 正確！答案是 " + currentNumber;
@@ -56,13 +97,17 @@
         feedback.style.color = "red";
         feedback.innerText = "❌ 錯誤！正確答案是 " + currentNumber;
       }
-      setTimeout(speakNumber, 1500);
     }
 
-    // 等 voices 載入完成再執行 speakNumber
+    // 等語音清單載入完後，啟動第一題
     window.speechSynthesis.onvoiceschanged = function() {
       speakNumber();
     };
+
+    // 綁定按鈕事件
+    document.getElementById('playBtn').addEventListener('click', speakNumber);
+    document.getElementById('submitBtn').addEventListener('click', checkAnswer);
+    document.getElementById('newQuestionBtn').addEventListener('click', speakNumber);
   </script>
 </body>
 </html>

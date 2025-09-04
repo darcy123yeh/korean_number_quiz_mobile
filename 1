@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>韓文數字聽力練習</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+      background-color: #f7f7f7;
+    }
+    h1 {
+      font-size: 1.5em;
+      margin-bottom: 10px;
+    }
+    select, input, button {
+      font-size: 1.2em;
+      padding: 10px;
+      margin: 8px;
+      width: 80%;
+      max-width: 300px;
+      box-sizing: border-box;
+    }
+    button {
+      cursor: pointer;
+      background-color: #007aff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+    }
+    input {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    #feedback {
+      margin-top: 20px;
+      font-size: 1.3em;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>🇰🇷 韓文數字聽力練習</h1>
+  <p>聽韓文數字，輸入正確答案：</p>
+
+  <label for="range">選擇數字範圍：</label><br>
+  <select id="range" onchange="newQuestion()">
+    <option value="1-20">1–20</option>
+    <option value="1-99" selected>1–99</option>
+    <option value="100-999">100–999</option>
+    <option value="1000-9999">1,000–9,999</option>
+    <option value="10000-99999">10,000–99,999</option>
+    <option value="1-99999">1–99,999</option>
+  </select><br>
+
+  <button onclick="playCurrent()">🔊 播放</button><br>
+
+  <input type="number" id="answer" placeholder="輸入數字">
+  <button onclick="checkAnswer()">提交</button>
+
+  <div id="feedback"></div>
+
+  <script>
+    let currentNumber = 0;
+
+    function getRange() {
+      const rangeValue = document.getElementById("range").value;
+      const [min, max] = rangeValue.split('-').map(Number);
+      return { min, max };
+    }
+
+    function newQuestion() {
+      const { min, max } = getRange();
+      currentNumber = Math.floor(Math.random() * (max - min + 1)) + min;
+
+      document.getElementById("answer").value = "";
+      document.getElementById("feedback").innerText = "";
+
+      playCurrent();
+    }
+
+    function playCurrent() {
+      if (!currentNumber) return;
+
+      const utterance = new SpeechSynthesisUtterance(currentNumber.toString());
+      utterance.lang = 'ko-KR';
+      speechSynthesis.cancel();
+      speechSynthesis.speak(utterance);
+
+      document.getElementById("answer").focus();
+    }
+
+    function checkAnswer() {
+      const userAnswer = parseInt(document.getElementById("answer").value);
+      const feedback = document.getElementById("feedback");
+
+      if (isNaN(userAnswer)) {
+        feedback.style.color = "orange";
+        feedback.innerText = "⚠️ 請輸入數字";
+        return;
+      }
+
+      if (userAnswer === currentNumber) {
+        feedback.style.color = "green";
+        feedback.innerText = `✅ 正確！答案是 ${currentNumber}`;
+      } else {
+        feedback.style.color = "red";
+        feedback.innerText = `❌ 錯誤，正確答案是 ${currentNumber}`;
+      }
+
+      setTimeout(newQuestion, 1500);
+    }
+
+    document.getElementById("answer").addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        checkAnswer();
+      }
+    });
+
+    window.onload = newQuestion;
+  </script>
+</body>
+</html>

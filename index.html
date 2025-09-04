@@ -1,168 +1,68 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>韓文數字聽力練習</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: 2rem auto;
-      text-align: center;
-      padding: 1rem;
-      background: #f9f9f9;
-      color: #222;
-    }
-    h1 {
-      margin-bottom: 1rem;
-    }
-    select, input, button {
-      font-size: 1.2rem;
-      padding: 0.5rem;
-      margin: 0.5rem 0.2rem;
-      width: 180px;
-      max-width: 90%;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
-    #feedback {
-      font-size: 1.3rem;
-      margin-top: 1.2rem;
-      min-height: 2rem;
-      font-weight: bold;
-    }
-    button {
-      cursor: pointer;
-      background-color: #2d89ef;
-      color: white;
-      border: none;
-      transition: background-color 0.3s ease;
-    }
-    button:hover {
-      background-color: #1b5fbd;
-    }
-    #controls {
-      margin-bottom: 1rem;
-    }
+    body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+    input { padding: 5px; font-size: 18px; }
+    button { padding: 5px 10px; font-size: 18px; margin-left: 5px; }
+    #feedback { margin-top: 20px; font-size: 20px; font-weight: bold; }
   </style>
 </head>
 <body>
-  <h1>🎧 韓文數字聽力練習</h1>
+  <h1>韓文數字聽力練習</h1>
+  <p>聽韓文語音，輸入正確數字：</p>
+  <button onclick="speakNumber()">🔊 播放</button><br><br>
+  <input type="number" id="answer" placeholder="輸入數字" />
+  <button onclick="checkAnswer()">提交</button>
 
-  <div id="controls">
-    <label for="range">選擇數字範圍：</label><br/>
-    <select id="range" aria-label="選擇數字範圍">
-      <option value="1-99">1 - 99</option>
-      <option value="1-999">1 - 999</option>
-      <option value="1-9999">1 - 9,999</option>
-      <option value="1-99999">1 - 99,999</option>
-    </select>
-    <br/>
-    <button id="newNumberBtn" aria-label="產生新數字並播放韓文語音">🔁 新題目</button>
-    <button id="playAgainBtn" aria-label="重新播放目前韓文數字語音">▶️ 重播</button>
-  </div>
+  <div id="feedback"></div>
 
-  <input
-    type="number"
-    id="answerInput"
-    placeholder="輸入你聽到的數字"
-    aria-label="輸入你的答案"
-    autocomplete="off"
-    inputmode="numeric"
-  />
-  <button id="submitBtn" aria-label="送出答案">送出</button>
+  <script>
+    let currentNumber = 0;
 
-  <div id="feedback" role="alert" aria-live="polite"></div>
-
-<script>
-  let currentNumber = null;
-
-  function getRange() {
-    const rangeVal = document.getElementById('range').value;
-    const [min, max] = rangeVal.split('-').map(Number);
-    return {min, max};
-  }
-
-  function speakNumber(num) {
-    if (!('speechSynthesis' in window)) {
-      alert('抱歉，您的瀏覽器不支援語音合成。');
-      return;
+    function getRandomNumber() {
+      return Math.floor(Math.random() * 99) + 1; // 1~99
     }
 
-    const utterance = new SpeechSynthesisUtterance(num.toString());
-    utterance.lang = 'ko-KR';
+    function speakNumber() {
+      currentNumber = getRandomNumber();
+      let utterance = new SpeechSynthesisUtterance(currentNumber.toString());
+      utterance.lang = 'ko-KR';
+      utterance.pitch = 1.5;  // 提高音高
+      utterance.rate = 1;     // 正常語速
 
-    let voices = speechSynthesis.getVoices();
-    if (!voices.length) {
-      speechSynthesis.onvoiceschanged = () => {
-        voices = speechSynthesis.getVoices();
-        setKoreanVoice(utterance, voices);
-        speechSynthesis.cancel();
-        speechSynthesis.speak(utterance);
-      };
-    } else {
-      setKoreanVoice(utterance, voices);
-      speechSynthesis.cancel();
+      // 等 voices 載入完再指定聲音
+      let voices = speechSynthesis.getVoices();
+      let koreanVoices = voices.filter(voice => voice.lang.startsWith('ko'));
+      if(koreanVoices.length > 0) {
+        utterance.voice = koreanVoices[0];
+      }
+
       speechSynthesis.speak(utterance);
-    }
-  }
 
-  function setKoreanVoice(utterance, voices) {
-    const koreanVoices = voices.filter(v => v.lang.startsWith('ko'));
-    if (koreanVoices.length > 0) {
-      utterance.voice = koreanVoices[0];
-    }
-  }
-
-  function newNumber() {
-    const {min, max} = getRange();
-    currentNumber = Math.floor(Math.random() * (max - min + 1)) + min;
-    document.getElementById('answerInput').value = '';
-    document.getElementById('feedback').textContent = '';
-    speakNumber(currentNumber);
-  }
-
-  function playAgain() {
-    if (currentNumber !== null) {
-      speakNumber(currentNumber);
-    }
-  }
-
-  function checkAnswer() {
-    const userInput = parseInt(document.getElementById('answerInput').value, 10);
-    const feedback = document.getElementById('feedback');
-
-    if (isNaN(userInput)) {
-      feedback.style.color = 'orange';
-      feedback.textContent = '⚠️ 請輸入數字。';
-      return;
+      document.getElementById("feedback").innerText = "";
+      document.getElementById("answer").value = "";
     }
 
-    if (userInput === currentNumber) {
-      feedback.style.color = 'green';
-      feedback.textContent = `✅ 答對了！答案是 ${currentNumber}`;
-      setTimeout(newNumber, 1500);
-    } else {
-      feedback.style.color = 'red';
-      feedback.textContent = `❌ 答錯囉，再試試或點重播 🔊`;
+    function checkAnswer() {
+      let userAnswer = parseInt(document.getElementById("answer").value);
+      let feedback = document.getElementById("feedback");
+      if (userAnswer === currentNumber) {
+        feedback.style.color = "green";
+        feedback.innerText = "✅ 正確！答案是 " + currentNumber;
+      } else {
+        feedback.style.color = "red";
+        feedback.innerText = "❌ 錯誤！正確答案是 " + currentNumber;
+      }
+      setTimeout(speakNumber, 1500);
     }
-  }
 
-  // 監聽事件
-  document.getElementById('newNumberBtn').addEventListener('click', newNumber);
-  document.getElementById('playAgainBtn').addEventListener('click', playAgain);
-  document.getElementById('submitBtn').addEventListener('click', checkAnswer);
-  document.getElementById('answerInput').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') {
-      checkAnswer();
-    }
-  });
-
-  // 初始化題目
-  window.speechSynthesis.onvoiceschanged = () => {
-    if (currentNumber === null) newNumber();
-  };
-</script>
+    // 等 voices 載入完成再執行 speakNumber
+    window.speechSynthesis.onvoiceschanged = function() {
+      speakNumber();
+    };
+  </script>
 </body>
 </html>
